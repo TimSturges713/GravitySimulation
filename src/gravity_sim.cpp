@@ -53,7 +53,7 @@ void Collides(Object& object1, Object& object2){
         yvel * unitVectory;
     float totalInvMass = 1/object1.massKg + 1/object2.massKg;
 
-        float impulse = (-(1 + .8) * vector) / (totalInvMass);
+        float impulse = (-(1 + .96) * vector) / (totalInvMass);
 
         float impulsex = unitVectorx * impulse;
         float impulsey = unitVectory * impulse;
@@ -90,19 +90,19 @@ void CollisionDetect(Object& object, vector<Object>& objects){
     }
     if(object.centery - object.radius <= -1.0){     // bottom screen
             object.centery = -1.0 + object.radius;
-            object.velocityy = -object.velocityy * 0.8;
+            object.velocityy = -object.velocityy * 0.9;
     }
     else if(object.centery + object.radius >= 1.0){ // top screen
         object.centery = 1.0 - object.radius;
-        object.velocityy = -object.velocityy * 0.8;
+        object.velocityy = -object.velocityy * 0.9;
     }
     else if(object.centerx + object.radius >= 1.0){ // right screen
         object.centerx = 1.0 - object.radius;
-        object.velocityx = -object.velocityx * 0.8;
+        object.velocityx = -object.velocityx * 0.9;
     }
     else if(object.centerx - object.radius <= -1.0){ // left screen
         object.centerx = -1.0 + object.radius;
-        object.velocityx = -object.velocityx * 0.8;
+        object.velocityx = -object.velocityx * 0.9;
     }
     else{
         return;
