@@ -12,28 +12,34 @@ float ASTRO_UNIT = 149597870700; // multiply this to the location on the screen
 
 GLFWwindow* StartGLFW();
 
-struct Object{
+class Object{
+public:
     float radius;
-    float centerx;
-    float centery;
+    vector<float> center;
     float massKg;
-    float velocityy;
-    float velocityx;
-    float red;
-    float green;
-    float blue;
+    vector<float> velocity;
+    vector<float> color;
+
+    Object(float radius, vector<float> center, float massKg, vector<float> velocity, vector<float> color){
+        this->radius = radius;
+        this->center = center;
+        this->massKg = massKg;
+        this->velocity = velocity;
+        this->color = color;
+    }
+
 };
 
 void DrawCircle(int triangles, Object circle){
-    glColor3f(circle.red, circle.green, circle.blue);
+    glColor3f(circle.color[0], circle.color[1], circle.color[2]);
 
     glBegin(GL_TRIANGLE_FAN);   // tells GL to make a fan of little triangles from these vertices
-    glVertex2f(circle.centerx, circle.centery);   // set center vertex first
+    glVertex2f(circle.center[0], circle.center[1]);   // set center vertex first
 
     for(int i = 0; i <= triangles; i++){    // sets the rest of the triangles around the whole circle's circumference
         float theta = i * 2.0f * M_PI / triangles;  // divides the circle into the arc of the triangle in radians, 2pi rad / how many triangles
-        float x = circle.centerx + circle.radius * cos(theta);    // gets the correct coordinates for the two outer vertices 
-        float y = circle.centery + circle.radius * sin(theta);
+        float x = circle.center[0] + circle.radius * cos(theta);    // gets the correct coordinates for the two outer vertices 
+        float y = circle.center[1] + circle.radius * sin(theta);
         glVertex2f(x, y);       // sets the vertices
     }
 
@@ -41,27 +47,26 @@ void DrawCircle(int triangles, Object circle){
 }
 
 void Collides(Object& object1, Object& object2){
-    float distance = sqrt(pow(object1.centerx - object2.centerx, 2) + pow(object1.centery - object2.centery, 2));
-    float unitVectorx = (object2.centerx - object1.centerx) / distance;
-    float unitVectory = (object2.centery - object1.centery) / distance;
+    float distance = sqrt(pow(object1.center[0] - object2.center[0], 2) + pow(object1.center[1] - object2.center[1], 2));
+    float unitVectorx = (object2.center[0] - object1.center[0]) / distance;
+    float unitVectory = (object2.center[1] - object1.center[1]) / distance;
 
-    float xvel = object1.velocityx - object2.velocityx;
-    float yvel = object1.velocityy - object2.velocityy;
+    float xvel = object1.velocity[0] - object2.velocity[0];
+    float yvel = object1.velocity[1] - object2.velocity[1];
 
     float vector =
         xvel * unitVectorx +
         yvel * unitVectory;
     float totalInvMass = 1/object1.massKg + 1/object2.massKg;
 
-        float impulse = (-(1 + .96) * vector) / (totalInvMass);
+    float impulse = (-(1 + .9) * vector) / (totalInvMass);
+    float impulsex = unitVectorx * impulse;
+    float impulsey = unitVectory * impulse;
 
-        float impulsex = unitVectorx * impulse;
-        float impulsey = unitVectory * impulse;
-
-        object1.velocityx += impulsex * (1/object1.massKg);
-        object1.velocityy += impulsey * (1/object1.massKg);
-        object2.velocityx -= impulsex * (1/object2.massKg);
-        object2.velocityy -= impulsey * (1/object2.massKg);
+    object1.velocity[0] += impulsex * (1/object1.massKg);
+    object1.velocity[1] += impulsey * (1/object1.massKg);
+    object2.velocity[0] -= impulsex * (1/object2.massKg);
+    object2.velocity[1] -= impulsey * (1/object2.massKg);
     
     
     float penetration = object1.radius + object2.radius - distance;
@@ -72,37 +77,37 @@ void Collides(Object& object1, Object& object2){
         float correction = max(penetration - slop, 0.0f) 
             * correctionPercent;
 
-        object1.centerx -= unitVectorx * correction * ((1/object1.massKg) / totalInvMass);
-        object1.centery -= unitVectory * correction * ((1/object1.massKg) / totalInvMass);
+        object1.center[0] -= unitVectorx * correction * ((1/object1.massKg) / totalInvMass);
+        object1.center[1] -= unitVectory * correction * ((1/object1.massKg) / totalInvMass);
 
-        object2.centerx += unitVectorx * correction * ((1/object2.massKg) / totalInvMass);
-        object2.centery += unitVectory * correction * ((1/object2.massKg) / totalInvMass);
+        object2.center[0] += unitVectorx * correction * ((1/object2.massKg) / totalInvMass);
+        object2.center[1] += unitVectory * correction * ((1/object2.massKg) / totalInvMass);
     }
 
 }
 
 void CollisionDetect(Object& object, vector<Object>& objects){
     for(int i = 0; i < objects.size(); i++){
-        float distance = sqrt(pow(object.centerx - objects[i].centerx, 2) + pow(object.centery - objects[i].centery, 2));
+        float distance = sqrt(pow(object.center[0] - objects[i].center[0], 2) + pow(object.center[1] - objects[i].center[1], 2));
         if(distance <= object.radius + objects[i].radius && distance != 0){
             Collides(object, objects[i]);
         }
     }
-    if(object.centery - object.radius <= -1.0){     // bottom screen
-            object.centery = -1.0 + object.radius;
-            object.velocityy = -object.velocityy * 0.9;
+    if(object.center[1] - object.radius <= -1.0){     // bottom screen
+            object.center[1] = -1.0 + object.radius;
+            object.velocity[1] = -object.velocity[1] * 0.95;
     }
-    else if(object.centery + object.radius >= 1.0){ // top screen
-        object.centery = 1.0 - object.radius;
-        object.velocityy = -object.velocityy * 0.9;
+    else if(object.center[1] + object.radius >= 1.0){ // top screen
+        object.center[1] = 1.0 - object.radius;
+        object.velocity[1] = -object.velocity[1] * 0.95;
     }
-    else if(object.centerx + object.radius >= 1.0){ // right screen
-        object.centerx = 1.0 - object.radius;
-        object.velocityx = -object.velocityx * 0.9;
+    else if(object.center[0] + object.radius >= 1.0){ // right screen
+        object.center[0] = 1.0 - object.radius;
+        object.velocity[0] = -object.velocity[0] * 0.95;
     }
-    else if(object.centerx - object.radius <= -1.0){ // left screen
-        object.centerx = -1.0 + object.radius;
-        object.velocityx = -object.velocityx * 0.9;
+    else if(object.center[0] - object.radius <= -1.0){ // left screen
+        object.center[0] = -1.0 + object.radius;
+        object.velocity[0] = -object.velocity[0] * 0.95;
     }
     else{
         return;
@@ -110,65 +115,31 @@ void CollisionDetect(Object& object, vector<Object>& objects){
 }
 
 int main(){
-    Object circle1;
-        circle1.radius = 0.1f;
-        circle1.centerx = -0.5f;
-        circle1.centery = -0.5f;
-        circle1.massKg = 5; // mass of earth
-        circle1.velocityy = 0;
-        circle1.velocityx = -4;
+    
+    Object circle1(
+        0.1f,
+    {0.5f, 0.2f},
+    5.0f,
+    {0.0f, 0.0f},
+    {0.0f, 1.0f, 1.0f});
 
 
-    Object circle2;
-        circle2.radius = 0.1f;
-        circle2.centerx = 0.5f;
-        circle2.centery = 0.5f;
-        circle2.massKg = 5;
-        circle2.velocityy = 0;
-        circle2.velocityx = 0;
+    Object circle2(
+        0.1f,
+    {-0.5f, -0.2f},
+    5.0f,
+    {4.0f, 0.0f},
+    {1.0f, 0.0f, 0.0f});
 
-    Object circle3;
-        circle3.radius = 0.1f;
-        circle3.centerx = 0.5f;
-        circle3.centery = 0.2f;
-        circle3.massKg = 5;
-        circle3.velocityy = 0;
-        circle3.velocityx = 4;
+    Object circle3(0.1f,
+    {0.0f, 0.0f},
+    5.0f,
+    {4.0f, 0.0f},
+    {0.0f, 1.0f, 0.0f});
 
     vector<Object> circles = {circle1, circle2, circle3};
-    float red = 1.0f;
-    float green = 1.0f;
-    float blue = 1.0f;
-    int cycle = 0;
-    for(int i = 0; i < circles.size(); i++){
-        circles[i].red = red;
-        circles[i].green = green;
-        circles[i].blue = blue;
-        if(red - 0.3 <= 0){
-            red = 1.0f;
-        }
-        if(cycle == 0){
-            red -= 0.3;
-            cycle = 1;
-            continue;
-        }
-        if(blue - 0.3 <= 0){
-            blue = 1.0f;
-        }
-        if(cycle == 1){
-            blue -= 0.3;
-            cycle = 2;
-            continue;
-        }
-        if(green - 0.3 <= 0){
-            green = 1.0f;
-        }
-        if(cycle == 2){
-            green -= 0.3;
-            cycle = 0;
-            continue;
-        }
-    }
+    
+    
     float previousFrameTime = glfwGetTime();
     GLFWwindow* window = StartGLFW();   // starts the window up
     while(!glfwWindowShouldClose(window)){  // main GLFW loop for frames
@@ -189,10 +160,10 @@ int main(){
 
         for(int i = 0; i < circles.size(); i++){    // velocity and position change loop for all circles
             DrawCircle(100, circles[i]);  // draws a circle with specified radius, center, range of window is [-1.0, 1.0] for floats
-            circles[i].velocityy += accelerationy * timeDiff * 2;
-            circles[i].velocityx += accelerationx * timeDiff * 2;
-            circles[i].centery += (circles[i].velocityy * timeDiff);
-            circles[i].centerx += (circles[i].velocityx * timeDiff);
+            circles[i].velocity[1] += accelerationy * timeDiff * 2;
+            circles[i].velocity[0] += accelerationx * timeDiff * 2;
+            circles[i].center[1] += (circles[i].velocity[1] * timeDiff);
+            circles[i].center[0] += (circles[i].velocity[0] * timeDiff);
             
         }
 
