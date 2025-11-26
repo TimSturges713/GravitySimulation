@@ -7,8 +7,10 @@
 
 using namespace std;
 
-float GRAVITATIONAL_CONSTANT = 6.6743 * pow(10, -11);
-float ASTRO_UNIT = 149597870700; // multiply this to the location on the screen
+float GRAVITATIONAL_CONSTANT = .5;
+float ASTRO_UNIT = 1.496e11; // multiply this to the location on the screen
+float EARTH_MASS = 5;
+
 
 GLFWwindow* StartGLFW();
 
@@ -19,13 +21,16 @@ public:
     float massKg;
     vector<float> velocity;
     vector<float> color;
+    vector<float> acceleration;
 
-    Object(float radius, vector<float> center, float massKg, vector<float> velocity, vector<float> color){
+
+    Object(float radius, vector<float> center, float massKg, vector<float> velocity, vector<float> color, vector<float> acceleration){
         this->radius = radius;
         this->center = center;
         this->massKg = massKg;
         this->velocity = velocity;
         this->color = color;
+        this->acceleration = acceleration;
     }
 
 };
@@ -114,30 +119,51 @@ void CollisionDetect(Object& object, vector<Object>& objects){
     }
 }
 
+void NearGravity(Object& circle, vector<Object> circles){
+    for(int i = 0; i < circles.size(); i++){
+        if(circle.center[0] == circles[i].center[0] && circle.center[1] == circles[i].center[1]){ //same circle
+            continue;
+        }
+        float distance = sqrt(pow(circle.center[0] - circles[i].center[0], 2) + pow(circle.center[1] - circles[i].center[1], 2));
+        float distanceMeter = distance;
+        float unitVectorx = (circles[i].center[0] - circle.center[0]) / distance;
+        float unitVectory = (circles[i].center[1] - circle.center[1]) / distance;
+        float gForce = (GRAVITATIONAL_CONSTANT * circle.massKg * circles[i].massKg) / (pow(distanceMeter, 2));
+        float forceX = gForce * unitVectorx;
+        float forceY = gForce * unitVectory;
+        circle.acceleration[0] += forceX/circle.massKg;
+        circle.acceleration[1] += forceY/circle.massKg;
+
+    }
+}
+
 int main(){
     
     Object circle1(
         0.1f,
-    {0.5f, 0.2f},
-    5.0f,
-    {0.0f, 0.0f},
-    {0.0f, 1.0f, 1.0f});
+    {0.5f, 0.5f},
+    EARTH_MASS,
+    {3.0f, -3.0f},
+    {0.0f, 1.0f, 1.0f},
+    {0.0, 0.0});
 
 
     Object circle2(
         0.1f,
-    {-0.5f, -0.2f},
-    5.0f,
-    {4.0f, 0.0f},
-    {1.0f, 0.0f, 0.0f});
+    {0.0f, 0.0f},
+    EARTH_MASS,
+    {0.0f, 0.0f},
+    {1.0f, 0.0f, 0.0f},
+    {0.0, 0.0});
 
     Object circle3(0.1f,
     {0.0f, 0.0f},
-    5.0f,
-    {4.0f, 0.0f},
-    {0.0f, 1.0f, 0.0f});
+    EARTH_MASS,
+    {0.0f, 0.0f},
+    {0.0f, 1.0f, 0.0f},
+    {0.0, 0.0});
 
-    vector<Object> circles = {circle1, circle2, circle3};
+    vector<Object> circles = {circle1, circle2};
     
     
     float previousFrameTime = glfwGetTime();
@@ -154,21 +180,23 @@ int main(){
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-
-        float accelerationy = -9.81;
-        float accelerationx = 0;
+        for(int i = 0; i < circles.size(); i++){
+            circles[i].acceleration[0] = 0.0f;
+            circles[i].acceleration[1] = 0.0f;
+        }
 
         for(int i = 0; i < circles.size(); i++){    // velocity and position change loop for all circles
             DrawCircle(100, circles[i]);  // draws a circle with specified radius, center, range of window is [-1.0, 1.0] for floats
-            circles[i].velocity[1] += accelerationy * timeDiff * 2;
-            circles[i].velocity[0] += accelerationx * timeDiff * 2;
-            circles[i].center[1] += (circles[i].velocity[1] * timeDiff);
-            circles[i].center[0] += (circles[i].velocity[0] * timeDiff);
+            NearGravity(circles[i], circles);
+            circles[i].velocity[1] += circles[i].acceleration[1] * timeDiff;
+            circles[i].velocity[0] += circles[i].acceleration[0] * timeDiff;
+            circles[i].center[1] += ((circles[i].velocity[1]) * timeDiff);
+            circles[i].center[0] += ((circles[i].velocity[0]) * timeDiff);
             
         }
 
         
-        // note center is in AU
+        
         
         
         
