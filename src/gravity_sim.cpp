@@ -141,18 +141,18 @@ int main(){
     
     Object circle1(
         0.1f,
-    {0.5f, 0.5f},
+    {0.0f, 0.5f},
     EARTH_MASS,
-    {3.0f, -3.0f},
+    {1.0f, 0.0f},
     {0.0f, 1.0f, 1.0f},
     {0.0, 0.0});
 
 
     Object circle2(
         0.1f,
-    {0.0f, 0.0f},
+    {0.0f, -0.5f},
     EARTH_MASS,
-    {0.0f, 0.0f},
+    {-1.0f, 0.0f},
     {1.0f, 0.0f, 0.0f},
     {0.0, 0.0});
 
@@ -224,4 +224,3 @@ GLFWwindow* StartGLFW(){
     glfwMakeContextCurrent(window); // Applies what is happening with the code to this rendered window
     return window;
 }
-
