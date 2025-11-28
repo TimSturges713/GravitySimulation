@@ -7,9 +7,20 @@
 
 using namespace std;
 
-float GRAVITATIONAL_CONSTANT = .5;
-float ASTRO_UNIT = 1.496e11; // multiply this to the location on the screen
-float EARTH_MASS = 5;
+float GRAVITATIONAL_CONSTANT = 0.00000001;
+float EARTH_MASS = 5.0;
+float EARTH_RADIUS = 0.01;
+float SUN_RADIUS = 10.076371 * EARTH_RADIUS;
+float AU = 0.85;
+float SUN_MASS = 333060.402 * EARTH_MASS;
+float MOON_MASS = 0.0123031469 * EARTH_MASS;
+float MOON_RADIUS = 0.005;
+float MOON_ORBIT_DISTANCE = 0.0026 * AU;  // Moon distance in screen units
+
+// Orbital velocities
+float EARTH_ORBITAL_VELOCITY = sqrt(GRAVITATIONAL_CONSTANT * SUN_MASS / AU);
+float MOON_ORBITAL_VELOCITY = sqrt(GRAVITATIONAL_CONSTANT * EARTH_MASS / MOON_ORBIT_DISTANCE);
+
 
 
 GLFWwindow* StartGLFW();
@@ -140,30 +151,30 @@ void NearGravity(Object& circle, vector<Object> circles){
 int main(){
     
     Object circle1(
-        0.1f,
-    {0.0f, 0.5f},
+        EARTH_RADIUS,       
+    {AU, 0.0f},
     EARTH_MASS,
-    {1.0f, 0.0f},
-    {0.0f, 1.0f, 1.0f},
+    {0.0f, EARTH_ORBITAL_VELOCITY},
+    {0.0f, 0.5f, 1.0f},
     {0.0, 0.0});
 
 
     Object circle2(
-        0.1f,
-    {0.0f, -0.5f},
-    EARTH_MASS,
-    {-1.0f, 0.0f},
-    {1.0f, 0.0f, 0.0f},
+        SUN_RADIUS,
+    {0.0f, 0.0f},
+    SUN_MASS,
+    {0.0f, 0.0f},
+    {1.0f, 1.0f, 0.0f},
     {0.0, 0.0});
 
-    Object circle3(0.1f,
-    {0.0f, 0.0f},
-    EARTH_MASS,
-    {0.0f, 0.0f},
-    {0.0f, 1.0f, 0.0f},
+    Object circle3(MOON_RADIUS,
+    {AU+MOON_ORBIT_DISTANCE, 0.0f},
+    MOON_MASS,
+    {0.0f, MOON_ORBITAL_VELOCITY + EARTH_ORBITAL_VELOCITY},
+    {0.7f, 0.7f, 0.7f},
     {0.0, 0.0});
 
-    vector<Object> circles = {circle1, circle2};
+    vector<Object> circles = {circle1, circle2, circle3};
     
     
     float previousFrameTime = glfwGetTime();
